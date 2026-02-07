@@ -57,6 +57,7 @@ _kubb_set_namespace() {
 # and updating the shell prompt to show context|namespace
 _kubb_set_context() {
   tmpfile=$(mktemp --tmpdir kubb-kubeconfig.XXXXXXXXXX)
+  chmod 600 "${tmpfile}"
 
   if [ "$ZSH_VERSION" ]; then
     zshexit() { rm -f -- "$tmpfile" }
@@ -64,7 +65,8 @@ _kubb_set_context() {
     trap 'rm -f -- "$tmpfile"' EXIT
   fi
 
-  cp "${1}" "${tmpfile}"
+  # Copy content only, do not preserve the source file's permissions
+  cat "${1}" > "${tmpfile}"
 
   export KUBECONFIG="${tmpfile}"
   kubectl config use-context "${2}" 1>/dev/null
