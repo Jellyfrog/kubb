@@ -57,7 +57,6 @@ _kubb_set_namespace() {
 # and updating the shell prompt to show context|namespace
 _kubb_set_context() {
   tmpfile=$(mktemp --tmpdir kubb-kubeconfig.XXXXXXXXXX)
-  chmod 600 "${tmpfile}"
 
   if [ "$ZSH_VERSION" ]; then
     zshexit() { rm -f -- "$tmpfile" }
