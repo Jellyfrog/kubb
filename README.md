@@ -2,6 +2,8 @@
 
 A bash utility for interactively switching between Kubernetes contexts and namespaces using [fzf](https://github.com/junegunn/fzf).
 
+![demo](demo.gif)
+
 ## Dependencies
 
 - [kubectl](https://kubernetes.io/docs/reference/kubectl/)
