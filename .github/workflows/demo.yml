@@ -25,12 +25,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fzf ffmpeg
+          sudo apt-get install -y fzf ffmpeg ttyd
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
-
-      - name: Install VHS
-        uses: charmbracelet/vhs-action@v2
+          sudo wget -qO /tmp/vhs.deb https://github.com/charmbracelet/vhs/releases/download/v0.11.0/vhs_0.11.0_amd64.deb
+          sudo dpkg -i /tmp/vhs.deb
 
       - name: Generate demo GIF
         run: vhs demo.tape
