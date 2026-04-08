@@ -53,9 +53,9 @@ Once a context is selected, kubb prepends a colored prompt segment showing the a
 
 | Variable | Default | Description |
 |---|---|---|
-| `KUBB_DEFAULT_CONTEXT_RESOURCES` | `nodes` | Resources shown in the context picker preview |
-| `KUBB_DEFAULT_NAMESPACE_RESOURCES` | `pods,services,ingressroute` | Resources shown in the namespace picker preview |
-| `KUBB_DEFAULT_HOOK_CD` | `~/git/kubernetes` | Directory to `pushd` into on context switch |
+| `KUBB_CONTEXT_RESOURCES` | `nodes` | Resources shown in the context picker preview |
+| `KUBB_NAMESPACE_RESOURCES` | `pods,services,ingressroute` | Resources shown in the namespace picker preview |
+| `KUBB_HOOK_CD` | *(unset)* | Directory to `pushd` into on context switch |
 | `KUBB_PROMPT` | *(auto-generated)* | Custom prompt segment; set to override the default |
 
 ## Shell support

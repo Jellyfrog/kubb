@@ -1,7 +1,7 @@
-KUBB_DEFAULT_CONTEXT_RESOURCES="${KUBB_DEFAULT_CONTEXT_RESOURCES:-nodes}"
-KUBB_DEFAULT_NAMESPACE_RESOURCES="${KUBB_DEFAULT_NAMESPACE_RESOURCES:-pods,services,ingressroute}"
+KUBB_CONTEXT_RESOURCES="${KUBB_CONTEXT_RESOURCES:-nodes}"
+KUBB_NAMESPACE_RESOURCES="${KUBB_NAMESPACE_RESOURCES:-pods,services,ingressroute}"
 
-KUBB_DEFAULT_HOOK_CD="${KUBB_DEFAULT_HOOK_CD:-~/git/kubernetes}"
+KUBB_HOOK_CD="${KUBB_HOOK_CD:-}"
 
 
 _kubb_get_contexts() {
@@ -9,10 +9,6 @@ _kubb_get_contexts() {
      -r '.contexts[] | filename +" "+ .name' \
      ~/.kube/configs/*.yaml \
      ~/.kube/config
-}
-
-_kubb_get_context() {
-  kubectl config view -o=jsonpath='{.current-context}'
 }
 
 _kubb_get_namespaces() {
@@ -37,6 +33,7 @@ _kubb_set_namespace() {
 }
 
 _kubb_set_context() {
+  local tmpfile
   tmpfile=$(mktemp --tmpdir kubb-kubeconfig.XXXXXXXXXX)
 
   if [ "$ZSH_VERSION" ]; then
@@ -79,7 +76,7 @@ _kubb_choose_context() {
                    printf '\e[90m%.s─' $(seq -s ' ' 1 $COLUMNS) ; \
                    echo ; \
                    echo ; \
-                   kubectl --kubeconfig={1} --context={2} get ${KUBB_DEFAULT_CONTEXT_RESOURCES}" \
+                   kubectl --kubeconfig={1} --context={2} get ${KUBB_CONTEXT_RESOURCES}" \
   ))
 
   if [[ -z "${CONTEXT}" ]]; then
@@ -106,7 +103,7 @@ _kubb_choose_namespace() {
   NAMESPACE=$(_kubb_get_namespaces | \
     fzf --query="${1}" \
         --select-1 \
-        --preview="kubectl -n {1} get ${KUBB_DEFAULT_NAMESPACE_RESOURCES}" \
+        --preview="kubectl -n {1} get ${KUBB_NAMESPACE_RESOURCES}" \
   )
 
   if [[ -z "${NAMESPACE}" ]]; then
@@ -131,7 +128,7 @@ _kubb_hook_helm_repo_update() {
 
 
 _kubb_hook_cd() {
-  pushd "${KUBB_DEFAULT_HOOK_CD}" > /dev/null
+  [[ -n "${KUBB_HOOK_CD}" ]] && pushd "${KUBB_HOOK_CD}" > /dev/null
 }
 
 kubb() {
