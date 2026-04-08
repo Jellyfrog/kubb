@@ -5,10 +5,12 @@ KUBB_HOOK_CD="${KUBB_HOOK_CD:-}"
 
 
 _kubb_get_contexts() {
-  yq --no-doc \
-     -r '.contexts[] | filename +" "+ .name' \
-     ~/.kube/configs/*.yaml \
-     ~/.kube/config
+  local files=()
+  for f in ~/.kube/configs/*.yaml; do
+    [[ -f "$f" ]] && files+=("$f")
+  done
+  [[ -f ~/.kube/config ]] && files+=(~/.kube/config)
+  [[ ${#files[@]} -gt 0 ]] && yq --no-doc -r '.contexts[] | filename +" "+ .name' "${files[@]}"
 }
 
 _kubb_get_namespaces() {
