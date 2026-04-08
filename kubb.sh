@@ -67,7 +67,7 @@ _kubb_set_context() {
 
 
 
-kubb_choose_context() {
+_kubb_choose_context() {
   local CONTEXT
   local DASHES=$(seq 1 $COLUMNS)
   CONTEXT=($(_kubb_get_contexts | \
@@ -97,7 +97,7 @@ kubb_choose_context() {
   _kubb_hook_ctx
 }
 
-kubb_choose_namespace() {
+_kubb_choose_namespace() {
   local NAMESPACE
 
   if [[ -z "${KUBERNETES_CONTEXT}" ]]; then
@@ -121,19 +121,39 @@ kubb_choose_namespace() {
 }
 
 _kubb_hook_ctx() {
-  kubb_hook_cd
-  kubb_hook_helm_repo_update
+  _kubb_hook_cd
+  _kubb_hook_helm_repo_update
 }
 
 _kubb_hook_namespace() {
 
 }
 
-kubb_hook_helm_repo_update() {
+_kubb_hook_helm_repo_update() {
   (helm repo update > /dev/null &)
 }
 
 
-kubb_hook_cd() {
+_kubb_hook_cd() {
   pushd ${KUBB_DEFAULT_HOOK_CD}
+}
+
+kubb() {
+  case "${1}" in
+    ctx|context)
+      shift
+      _kubb_choose_context "$@"
+      ;;
+    ns|namespace)
+      shift
+      _kubb_choose_namespace "$@"
+      ;;
+    *)
+      echo "Usage: kubb <command>"
+      echo ""
+      echo "Commands:"
+      echo "  ctx, context      Switch Kubernetes context"
+      echo "  ns, namespace     Switch Kubernetes namespace"
+      ;;
+  esac
 }
