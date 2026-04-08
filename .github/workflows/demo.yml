@@ -29,10 +29,11 @@ jobs:
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
 
-      - name: Generate demo GIF
+      - name: Install VHS
         uses: charmbracelet/vhs-action@v2
-        with:
-          path: demo.tape
+
+      - name: Generate demo GIF
+        run: vhs demo.tape
 
       - name: Commit GIF
         run: |
