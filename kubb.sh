@@ -3,7 +3,6 @@ KUBB_DEFAULT_NAMESPACE_RESOURCES="${KUBB_DEFAULT_NAMESPACE_RESOURCES:-pods,servi
 
 KUBB_DEFAULT_HOOK_CD="${KUBB_DEFAULT_HOOK_CD:-~/git/kubernetes}"
 
-###
 
 _kubb_get_contexts() {
   yq --no-doc \
@@ -41,7 +40,7 @@ _kubb_set_context() {
   tmpfile=$(mktemp --tmpdir kubb-kubeconfig.XXXXXXXXXX)
 
   if [ "$ZSH_VERSION" ]; then
-    zshexit() { rm -f -- "$tmpfile" }
+    zshexit() { rm -f -- "$tmpfile"; }
   else
     trap 'rm -f -- "$tmpfile"' EXIT
   fi
@@ -69,7 +68,6 @@ _kubb_set_context() {
 
 _kubb_choose_context() {
   local CONTEXT
-  local DASHES=$(seq 1 $COLUMNS)
   CONTEXT=($(_kubb_get_contexts | \
     fzf --query="${1}" \
         --select-1 \
@@ -125,9 +123,7 @@ _kubb_hook_ctx() {
   _kubb_hook_helm_repo_update
 }
 
-_kubb_hook_namespace() {
-
-}
+_kubb_hook_namespace() { :; }
 
 _kubb_hook_helm_repo_update() {
   (helm repo update > /dev/null &)
@@ -135,7 +131,7 @@ _kubb_hook_helm_repo_update() {
 
 
 _kubb_hook_cd() {
-  pushd ${KUBB_DEFAULT_HOOK_CD}
+  pushd "${KUBB_DEFAULT_HOOK_CD}" > /dev/null
 }
 
 kubb() {
@@ -149,11 +145,13 @@ kubb() {
       _kubb_choose_namespace "$@"
       ;;
     *)
-      echo "Usage: kubb <command>"
-      echo ""
-      echo "Commands:"
-      echo "  ctx, context      Switch Kubernetes context"
-      echo "  ns, namespace     Switch Kubernetes namespace"
+      cat <<EOF
+Usage: kubb <command>
+
+Commands:
+  ctx, context      Switch Kubernetes context
+  ns, namespace     Switch Kubernetes namespace
+EOF
       ;;
   esac
 }
