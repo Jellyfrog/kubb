@@ -33,6 +33,14 @@ jobs:
           kubectl --context kwok-staging create namespace app
           kubectl --context kwok-staging create namespace ingress
 
+      - name: Sanity check
+        run: |
+          source kubb.sh
+          kubb ctx production
+          kubectl get nodes
+          kubb ns monitoring
+          kubectl get namespaces
+
       - name: Install dependencies
         run: |
           sudo apt-get update
