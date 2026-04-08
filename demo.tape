@@ -17,6 +17,18 @@ Type "kubb ctx"
 Enter
 Sleep 2s
 
+Down
+Sleep 500ms
+
+Enter
+Sleep 2s
+
 Type "kubb ns"
+Enter
+Sleep 2s
+
+Down
+Sleep 500ms
+
 Enter
 Sleep 2s

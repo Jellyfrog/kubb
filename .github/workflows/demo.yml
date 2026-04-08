@@ -19,8 +19,19 @@ jobs:
         with:
           command: kwokctl
 
-      - name: Create cluster
-        run: kwokctl create cluster
+      - name: Create clusters
+        run: |
+          kwokctl create cluster --name=production
+          kwokctl create cluster --name=staging
+
+      - name: Create namespaces
+        run: |
+          kubectl --context kwok-production create namespace monitoring
+          kubectl --context kwok-production create namespace app
+          kubectl --context kwok-production create namespace ingress
+          kubectl --context kwok-staging create namespace monitoring
+          kubectl --context kwok-staging create namespace app
+          kubectl --context kwok-staging create namespace ingress
 
       - name: Install dependencies
         run: |
