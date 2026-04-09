@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kwokctl
+        uses: kubernetes-sigs/kwok@main
+        with:
+          command: kwokctl
+
+      - name: Create clusters
+        run: |
+          kwokctl create cluster --name=production
+          kwokctl create cluster --name=staging
+          kwokctl scale node --replicas=3 --name=production
+
+      - name: Create namespaces
+        run: |
+          kubectl --context kwok-production create namespace monitoring
+          kubectl --context kwok-production create namespace app-1
+          kubectl --context kwok-production create namespace app-2
+          kubectl --context kwok-production create namespace app-3
+          kubectl --context kwok-production create namespace ingress
+          kubectl --context kwok-production -n app-2 create deployment my-deployment --image=pod --replicas=5
+
+      - name: Install kubb dependencies
+        run: sudo apt install -y fzf
+
+      - name: Kubb
+        run: |
+          source kubb.sh
+          kubb ctx production
+          kubectl get nodes
+          kubectl get pods
+          kubb ns app-2
+          kubectl get pods
+
+      - name: Install demo dependencies
+        run: |
+          sudo apt install -y ffmpeg ttyd
+          sudo wget -qO /tmp/vhs.deb https://github.com/charmbracelet/vhs/releases/download/v0.11.0/vhs_0.11.0_amd64.deb
+          sudo dpkg -i /tmp/vhs.deb
+
+      - name: Generate demo GIF
+        run: |
+          vhs <<'TAPE'
+          Output demo.gif
+
+          Set Shell "bash"
+          Set FontSize 18
+          Set Width 1200
+          Set Height 700
+          Set Padding 15
+          Set TypingSpeed 100ms
+
+          Hide
+          Type "source kubb.sh && clear"
+          Enter
+          Show
+
+          Type "kubb"
+          Enter
+          Sleep 1
+
+          Type "kubb ctx"
+          Enter
+          Sleep 2
+
+          Up
+          Sleep 0.8
+
+          Down
+          Sleep 0.8
+
+          Enter
+          Sleep 1.1
+
+          Type "kubectl get pods"
+          Enter
+          Sleep 1
+
+          Type "kubb ns"
+          Enter
+          Sleep 1.5
+
+          Up
+          Sleep 0.5
+
+          Up
+          Sleep 0.5
+
+          Type@0.5 "app-2"
+          Sleep 0.7
+
+          Enter
+          Sleep 0.5
+
+          Type "kubectl get pods"
+          Enter
+          Sleep 5
+          TAPE
+
+      - name: Commit GIF
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add demo.gif
+          git commit -m "chore: update demo GIF" || exit 0
+          git push
