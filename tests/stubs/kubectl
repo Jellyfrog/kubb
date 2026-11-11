@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Test double for kubectl. Commands that would reach a cluster are faked;
+# everything else (kubeconfig handling) is delegated to the real kubectl.
+#
+#   KUBB_TEST_NAMESPACES  newline separated namespaces returned by
+#                         `kubectl get namespaces`
+#   KUBB_TEST_FORBIDDEN   when set, `kubectl get namespaces` fails like a
+#                         user without RBAC permission to list namespaces
+echo "$*" >> "${KUBB_TEST_LOG}/kubectl.calls"
+
+case "$1 $2" in
+  "get namespaces")
+    if [[ -n "${KUBB_TEST_FORBIDDEN}" ]]; then
+      echo 'Error from server (Forbidden): namespaces is forbidden: User "dev" cannot list resource "namespaces" in API group "" at the cluster scope' >&2
+      exit 1
+    fi
+    printf '%s\n' "${KUBB_TEST_NAMESPACES}"
+    exit 0
+    ;;
+esac
+
+if [[ "$1" == "get" || "$1" == "-n" ]]; then
+  echo "fake output for: kubectl $*"
+  exit 0
+fi
+
+exec "${KUBB_TEST_REAL_KUBECTL}" "$@"

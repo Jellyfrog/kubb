@@ -72,3 +72,12 @@ Once a context is selected, kubb prepends a colored prompt segment showing the a
 ## Shell support
 
 Works in both **bash** and **zsh**. Kubb detects the shell and adjusts array indexing, prompt formatting, and temp file cleanup accordingly.
+
+## Tests
+
+The test suite uses [bats](https://github.com/bats-core/bats-core) and needs `kubectl` and [yq](https://github.com/mikefarah/yq). No cluster is required: `kubectl` calls that would reach a cluster and `fzf` are replaced by stubs in `tests/stubs`, while kubeconfig handling runs against the real `kubectl` using fixtures in `tests/fixtures`.
+
+```bash
+bats tests/                       # run in bash
+KUBB_TEST_SHELL=zsh bats tests/   # run in zsh
+```

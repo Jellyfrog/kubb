@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [bash, zsh]
+    steps:
+      - uses: actions/checkout@v4
+
+      # kubectl and mikefarah/yq are preinstalled on GitHub-hosted runners
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y bats zsh
+
+      - name: Run tests (${{ matrix.shell }})
+        run: bats tests/
+        env:
+          KUBB_TEST_SHELL: ${{ matrix.shell }}

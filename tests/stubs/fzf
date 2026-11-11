@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Test double for fzf. Records its arguments and input, then answers with
+# KUBB_TEST_FZF_OUTPUT (may contain newlines) and KUBB_TEST_FZF_EXIT.
+# When KUBB_TEST_FZF_OUTPUT is unset it "selects" the first input line.
+printf '%s\n' "$@" > "${KUBB_TEST_LOG}/fzf.args"
+cat > "${KUBB_TEST_LOG}/fzf.input"
+
+if [[ -n "${KUBB_TEST_FZF_OUTPUT+set}" ]]; then
+  [[ -n "${KUBB_TEST_FZF_OUTPUT}" ]] && printf '%s\n' "${KUBB_TEST_FZF_OUTPUT}"
+else
+  head -n 1 "${KUBB_TEST_LOG}/fzf.input"
+fi
+
+exit "${KUBB_TEST_FZF_EXIT:-0}"

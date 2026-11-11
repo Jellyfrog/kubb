@@ -6,6 +6,8 @@ KUBB_HOOK_CD="${KUBB_HOOK_CD:-}"
 
 _kubb_get_contexts() {
   local files=()
+  # zsh aborts on unmatched globs by default; expand them to nothing instead
+  [ "$ZSH_VERSION" ] && setopt local_options null_glob
   for f in ~/.kube/configs/*.yaml; do
     [[ -f "$f" ]] && files+=("$f")
   done
@@ -46,13 +48,21 @@ _kubb_set_namespace() {
 }
 
 _kubb_set_context() {
-  local tmpfile
+  local tmpfile quoted
+
+  # Drop the private copy made by a previous context switch
+  if [[ "${KUBECONFIG}" == */kubb-kubeconfig.* ]]; then
+    rm -f -- "${KUBECONFIG}"
+  fi
+
   tmpfile=$(mktemp --tmpdir kubb-kubeconfig.XXXXXXXXXX)
 
+  # Expand the path now: tmpfile is local and gone by the time the shell exits
+  quoted=$(printf '%q' "${tmpfile}")
   if [ "$ZSH_VERSION" ]; then
-    zshexit() { rm -f -- "$tmpfile"; }
+    eval "zshexit() { rm -f -- ${quoted}; }"
   else
-    trap 'rm -f -- "$tmpfile"' EXIT
+    trap "rm -f -- ${quoted}" EXIT
   fi
 
   cp "${1}" "${tmpfile}"

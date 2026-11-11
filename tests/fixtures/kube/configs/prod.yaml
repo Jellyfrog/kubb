@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Config
+clusters:
+  - name: prod
+    cluster:
+      server: https://prod.example.com:6443
+users:
+  - name: prod-user
+    user:
+      token: not-a-real-token
+contexts:
+  - name: prod
+    context:
+      cluster: prod
+      user: prod-user
+      namespace: app-1
+  - name: prod-admin
+    context:
+      cluster: prod
+      user: prod-user
+current-context: prod
