@@ -58,9 +58,13 @@ kubb_session() {
   "${KUBB_TEST_SHELL}" "${KUBB_ROOT}/tests/session.sh" "$1"
 }
 
-# Value recorded by the last kubb_session, e.g. `state KUBERNETES_NAMESPACE`
+# Value recorded by the last kubb_session, e.g. `state KUBERNETES_NAMESPACE`.
+# The optional second argument selects a named snapshot (record_state NAME)
+# or the final state of a window opened with new_window.
 state() {
-  sed -n "s/^$1=//p" "${KUBB_TEST_LOG}/state"
+  local file="${KUBB_TEST_LOG}/state${2:+.$2}"
+  [[ -f "${file}" ]] || { echo "no state recorded at ${file}" >&2; return 1; }
+  sed -n "s/^$1=//p" "${file}"
 }
 
 fzf_was_called() {
