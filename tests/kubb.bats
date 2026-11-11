@@ -101,6 +101,25 @@ load test_helper
   [ -z "$(ls -A "${TMPDIR}")" ]
 }
 
+@test "ctx in a nested shell keeps the parent's kubeconfig copy" {
+  export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+  # the child inherits the exported KUBECONFIG of the parent
+  run kubb_session 'kubb ctx
+                    "${KUBB_TEST_SHELL}" -c "source \"\${KUBB_ROOT}/kubb.sh\"; kubb ctx"
+                    [ -f "${KUBECONFIG}" ] && echo "parent kubeconfig intact"'
+  [[ "$output" == *"parent kubeconfig intact"* ]]
+  [ "$(state CURRENT_CONTEXT)" = "prod" ]
+}
+
+@test "ctx in a nested shell leaves the parent's copy to the parent" {
+  export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+  run kubb_session 'kubb ctx
+                    "${KUBB_TEST_SHELL}" -c "source \"\${KUBB_ROOT}/kubb.sh\"; kubb ctx"'
+  [ "$status" -eq 0 ]
+  # child cleaned up its own copy, parent removed its copy on exit
+  [ -z "$(ls -A "${TMPDIR}")" ]
+}
+
 @test "ctx does nothing when the picker is cancelled" {
   export KUBB_TEST_FZF_OUTPUT="" KUBB_TEST_FZF_EXIT=130
   run kubb_session 'kubb ctx'

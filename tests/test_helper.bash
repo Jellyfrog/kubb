@@ -48,7 +48,7 @@ kubb_test_setup() {
   unset KUBECONFIG KUBERNETES_CONTEXT KUBERNETES_NAMESPACE KUBB_PROMPT KUBB_HOOK_CD
 
   export KUBB_ROOT
-  KUBB_TEST_SHELL="${KUBB_TEST_SHELL:-bash}"
+  export KUBB_TEST_SHELL="${KUBB_TEST_SHELL:-bash}"
   command -v "${KUBB_TEST_SHELL}" >/dev/null || skip "${KUBB_TEST_SHELL} is required"
 }
 
