@@ -3,6 +3,9 @@
 # KUBB_TEST_FZF_OUTPUT (may contain newlines) and KUBB_TEST_FZF_EXIT.
 # When KUBB_TEST_FZF_OUTPUT is unset it "selects" the first input line.
 printf '%s\n' "$@" > "${KUBB_TEST_LOG}/fzf.args"
+for arg in "$@"; do
+  [[ "${arg}" == --preview=* ]] && printf '%s' "${arg#--preview=}" > "${KUBB_TEST_LOG}/fzf.preview"
+done
 cat > "${KUBB_TEST_LOG}/fzf.input"
 
 if [[ -n "${KUBB_TEST_FZF_OUTPUT+set}" ]]; then
