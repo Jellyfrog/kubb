@@ -81,3 +81,13 @@ The test suite uses [bats](https://github.com/bats-core/bats-core) and needs `ku
 bats tests/                       # run in bash
 KUBB_TEST_SHELL=zsh bats tests/   # run in zsh
 ```
+
+Integration tests run kubb against live [kwok](https://kwok.sigs.k8s.io/) clusters, including a user without permission to list namespaces. They need [kwokctl](https://kwok.sigs.k8s.io/docs/user/installation/) and are skipped when the clusters are missing:
+
+```bash
+tests/integration/setup-kwok.sh   # creates the clusters, adds them to ~/.kube/config
+bats tests/integration/           # KUBB_TEST_SHELL=zsh works here too
+
+# without docker
+KWOK_RUNTIME=binary tests/integration/setup-kwok.sh
+```

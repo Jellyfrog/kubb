@@ -25,3 +25,29 @@ jobs:
         run: bats tests/
         env:
           KUBB_TEST_SHELL: ${{ matrix.shell }}
+
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [bash, zsh]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kwokctl
+        uses: kubernetes-sigs/kwok@v0.7.0
+        with:
+          command: kwokctl
+
+      # kubectl and mikefarah/yq are preinstalled on GitHub-hosted runners
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y bats zsh
+
+      - name: Create kwok clusters
+        run: tests/integration/setup-kwok.sh
+
+      - name: Run integration tests (${{ matrix.shell }})
+        run: bats tests/integration/
+        env:
+          KUBB_TEST_SHELL: ${{ matrix.shell }}

@@ -1,8 +1,17 @@
 # Shared setup for the kubb test suite.
 
-KUBB_ROOT="$(cd "${BATS_TEST_DIRNAME}/.." && pwd)"
+KUBB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 setup() {
+  kubb_test_setup stubbed
+}
+
+# mode "stubbed": fake cluster, kubeconfigs from tests/fixtures
+# mode "live":    real cluster, kubeconfig from KUBB_TEST_KUBECONFIG
+#                 (default ~/.kube/config); only fzf is stubbed
+kubb_test_setup() {
+  local mode="$1"
+
   for tool in kubectl yq; do
     command -v "$tool" >/dev/null || skip "$tool is required"
   done
@@ -12,15 +21,27 @@ setup() {
   export KUBB_TEST_LOG="${BATS_TEST_TMPDIR}/log"
   mkdir -p "${KUBB_TEST_LOG}"
 
-  # Isolated home with fixture kubeconfigs
+  local kubeconfig="${KUBB_TEST_KUBECONFIG:-${HOME}/.kube/config}"
+
+  # Isolated home
   export HOME="${BATS_TEST_TMPDIR}/home"
   mkdir -p "${HOME}"
-  cp -r "${KUBB_ROOT}/tests/fixtures/kube" "${HOME}/.kube"
 
   export TMPDIR="${BATS_TEST_TMPDIR}/tmp"
   mkdir -p "${TMPDIR}"
 
-  export PATH="${KUBB_ROOT}/tests/stubs:${PATH}"
+  if [[ "${mode}" == live ]]; then
+    [[ -f "${kubeconfig}" ]] || skip "no kubeconfig at ${kubeconfig}"
+    mkdir -p "${HOME}/.kube"
+    "${KUBB_TEST_REAL_KUBECTL}" config view --raw --kubeconfig="${kubeconfig}" > "${HOME}/.kube/config"
+
+    mkdir -p "${BATS_TEST_TMPDIR}/bin"
+    ln -s "${KUBB_ROOT}/tests/stubs/fzf" "${BATS_TEST_TMPDIR}/bin/fzf"
+    export PATH="${BATS_TEST_TMPDIR}/bin:${PATH}"
+  else
+    cp -r "${KUBB_ROOT}/tests/fixtures/kube" "${HOME}/.kube"
+    export PATH="${KUBB_ROOT}/tests/stubs:${PATH}"
+  fi
 
   export KUBB_TEST_NAMESPACES=$'default\nkube-system\napp-1\napp-2'
   unset KUBB_TEST_FORBIDDEN KUBB_TEST_FZF_OUTPUT KUBB_TEST_FZF_EXIT

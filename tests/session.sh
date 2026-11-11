@@ -5,6 +5,11 @@
 PS1='$ '
 source "${KUBB_ROOT}/kubb.sh"
 
+# Run the preview command of the last fzf call for an entry, the way fzf would
+fzf_preview() {
+  bash -c "$(sed -e "s|{1}|$1|g" -e "s|{2}|$2|g" "${KUBB_TEST_LOG}/fzf.preview")"
+}
+
 eval "$1"
 rc=$?
 
