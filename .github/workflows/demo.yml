@@ -20,19 +20,10 @@ jobs:
           command: kwokctl
 
       - name: Create clusters
-        run: |
-          kwokctl create cluster --name=production
-          kwokctl create cluster --name=staging
-          kwokctl scale node --replicas=3 --name=production
-
-      - name: Create namespaces
-        run: |
-          kubectl --context kwok-production create namespace monitoring
-          kubectl --context kwok-production create namespace app-1
-          kubectl --context kwok-production create namespace app-2
-          kubectl --context kwok-production create namespace app-3
-          kubectl --context kwok-production create namespace ingress
-          kubectl --context kwok-production -n app-2 create deployment my-deployment --image=pod --replicas=5
+        run: tests/integration/setup-kwok.sh
+        env:
+          # keep the restricted test context out of the demo's context picker
+          KUBB_KWOK_RESTRICTED_USER: "0"
 
       - name: Install kubb dependencies
         run: sudo apt install -y fzf

@@ -71,7 +71,7 @@ ctx() {
 @test "ns lists the cluster's namespaces" {
   ctx kwok-production
   run kubb_session 'kubb ctx; export KUBB_TEST_FZF_OUTPUT=app-1; kubb ns'
-  for ns in default kube-system app-1 app-2 monitoring; do
+  for ns in default kube-system monitoring app-1 app-2 app-3 ingress; do
     grep -qxF "${ns}" "${KUBB_TEST_LOG}/fzf.input"
   done
 }
@@ -82,7 +82,7 @@ ctx() {
   [ "$status" -eq 0 ]
   [ "$(state KUBERNETES_NAMESPACE)" = "app-2" ]
   [ "$(state KUBECONFIG_NAMESPACE)" = "app-2" ]
-  [ "$(grep -c '^my-deployment-.* Running ' <<<"$output")" -eq 2 ]
+  [ "$(grep -c '^my-deployment-.* Running ' <<<"$output")" -eq 5 ]
 }
 
 @test "ns preview shows the namespace's resources" {
@@ -107,7 +107,7 @@ ctx() {
   ! grep -qxF -- "--print-query" "${KUBB_TEST_LOG}/fzf.args"
   [[ "$output" != *"Forbidden"* ]]
   [ "$(state KUBERNETES_NAMESPACE)" = "app-2" ]
-  [ "$(grep -c '^my-deployment-.* Running ' <<<"$output")" -eq 2 ]
+  [ "$(grep -c '^my-deployment-.* Running ' <<<"$output")" -eq 5 ]
 }
 
 @test "ns with a restricted user offers known namespaces" {
