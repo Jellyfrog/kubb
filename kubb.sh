@@ -47,22 +47,28 @@ _kubb_set_namespace() {
   export KUBERNETES_NAMESPACE=${1}
 }
 
-_kubb_set_context() {
-  local tmpfile quoted
-
-  # Drop the private copy made by a previous context switch
-  if [[ "${KUBECONFIG}" == */kubb-kubeconfig.* ]]; then
-    rm -f -- "${KUBECONFIG}"
+_kubb_cleanup() {
+  if [[ -n "${_KUBB_KUBECONFIG}" ]]; then
+    rm -f -- "${_KUBB_KUBECONFIG}"
+    _KUBB_KUBECONFIG=
   fi
+}
+
+_kubb_set_context() {
+  local tmpfile
+
+  # Drop the private copy this shell made on a previous switch. Tracked in a
+  # non-exported variable: a nested shell inherits KUBECONFIG pointing at its
+  # parent's copy, which must be left alone.
+  _kubb_cleanup
 
   tmpfile=$(mktemp --tmpdir kubb-kubeconfig.XXXXXXXXXX)
+  _KUBB_KUBECONFIG="${tmpfile}"
 
-  # Expand the path now: tmpfile is local and gone by the time the shell exits
-  quoted=$(printf '%q' "${tmpfile}")
   if [ "$ZSH_VERSION" ]; then
-    eval "zshexit() { rm -f -- ${quoted}; }"
+    zshexit() { _kubb_cleanup; }
   else
-    trap "rm -f -- ${quoted}" EXIT
+    trap '_kubb_cleanup' EXIT
   fi
 
   cp "${1}" "${tmpfile}"
