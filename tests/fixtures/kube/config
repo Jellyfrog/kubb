@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Config
+clusters:
+  - name: staging
+    cluster:
+      server: https://staging.example.com:6443
+users:
+  - name: staging-user
+    user:
+      token: not-a-real-token
+contexts:
+  - name: staging
+    context:
+      cluster: staging
+      user: staging-user
+      namespace: team-a
+current-context: staging
