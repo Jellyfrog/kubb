@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Creates the kwok clusters used by the integration tests and adds them to
-# ~/.kube/config. Requires kwokctl, kubectl and yq. Set KWOK_RUNTIME=binary to run
-# without docker.
+# Creates the kwok clusters used by the integration tests and the demo, and
+# adds them to ~/.kube/config. Requires kwokctl, kubectl and yq. Set
+# KWOK_RUNTIME=binary to run without docker.
 #
-#   kwok-production      admin access, 3 nodes, namespaces app-1, app-2 and
-#                        monitoring, a deployment in app-2
-#   kwok-staging         admin access, no extra resources
+#   kwok-production      3 nodes, namespaces app-1, app-2, app-3, ingress and
+#                        monitoring, a deployment with 5 pods in app-2
+#   kwok-staging         no extra resources
 #   kwok-production-dev  same cluster, impersonating user "dev" who may only
 #                        read in app-2 and cannot list namespaces
+#                        (skipped with KUBB_KWOK_RESTRICTED_USER=0)
 set -euo pipefail
 
 kwokctl create cluster --name=production
@@ -16,10 +17,15 @@ kwokctl scale node --replicas=3 --name=production
 
 k() { kubectl --context kwok-production "$@"; }
 
-for ns in app-1 app-2 monitoring; do
+for ns in monitoring app-1 app-2 app-3 ingress; do
   k create namespace "${ns}"
 done
-k -n app-2 create deployment my-deployment --image=pod --replicas=2
+k -n app-2 create deployment my-deployment --image=pod --replicas=5
+k -n app-2 wait --for=condition=Available deployment/my-deployment --timeout=120s
+
+if [[ "${KUBB_KWOK_RESTRICTED_USER:-1}" == 0 ]]; then
+  exit 0
+fi
 
 k -n app-2 create rolebinding dev-view --clusterrole=view --user=dev
 
@@ -33,7 +39,6 @@ kubectl config set-context kwok-production-dev \
   --cluster=kwok-production --user=kwok-production-dev --namespace=app-2
 
 # Sanity checks
-k -n app-2 wait --for=condition=Available deployment/my-deployment --timeout=120s
 if kubectl --context kwok-production-dev get namespaces >/dev/null 2>&1; then
   echo "dev user can unexpectedly list namespaces" >&2
   exit 1
