@@ -131,3 +131,36 @@ ctx() {
   run kubb_session 'kubb ctx; export KUBB_TEST_FZF_OUTPUT=$'"'"'\napp-2'"'"'; kubb ns; fzf_preview app-2'
   [[ "$output" == *"pod/my-deployment-"* ]]
 }
+
+# --- independent sessions (separate terminal windows) -------------------------
+
+@test "switching context and namespace in another window does not change this window" {
+  export WINDOW2="$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/config kwok-staging"
+    kubb ctx
+    export KUBB_TEST_FZF_OUTPUT=kube-system
+    kubb ns kube-system
+    signal window2-switched
+    await window1-checked
+    kubectl get nodes --no-headers | wc -l > "${KUBB_TEST_LOG}/window2.nodes"
+SH
+)"
+  run kubb_session "$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/config kwok-production"
+    kubb ctx
+    export KUBB_TEST_FZF_OUTPUT=app-2
+    kubb ns app-2
+    new_window "${WINDOW2}"
+    await window2-switched
+    kubectl get pods --no-headers
+    signal window1-checked
+SH
+)"
+  [ "$status" -eq 0 ]
+  [ "$(state CURRENT_CONTEXT)" = "kwok-production" ]
+  [ "$(state KUBECONFIG_NAMESPACE)" = "app-2" ]
+  [ "$(grep -c '^my-deployment-.* Running ' <<<"$output")" -eq 5 ]
+  [ "$(state CURRENT_CONTEXT window2)" = "kwok-staging" ]
+  [ "$(state KUBECONFIG_NAMESPACE window2)" = "kube-system" ]
+  [ "$(tr -d ' ' < "${KUBB_TEST_LOG}/window2.nodes")" = "0" ]
+}

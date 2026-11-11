@@ -248,3 +248,104 @@ load test_helper
   [ "${lines[1]}" = "app-1" ]
   [ "${#lines[@]}" -eq 2 ]
 }
+
+# --- independent sessions (separate terminal windows) -------------------------
+
+@test "switching context in another window does not change this window" {
+  export WINDOW2="$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/config staging"
+    kubb ctx
+    signal window2-switched
+    await window1-checked
+SH
+)"
+  run kubb_session "$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+    kubb ctx
+    new_window "${WINDOW2}"
+    await window2-switched
+    record_state window1
+    signal window1-checked
+SH
+)"
+  [ "$status" -eq 0 ]
+  [ "$(state KUBERNETES_CONTEXT window1)" = "prod" ]
+  [ "$(state CURRENT_CONTEXT window1)" = "prod" ]
+  [ "$(state KUBERNETES_NAMESPACE window1)" = "app-1" ]
+  [ "$(state CURRENT_CONTEXT window2)" = "staging" ]
+  [ "$(state KUBECONFIG window1)" != "$(state KUBECONFIG window2)" ]
+}
+
+@test "switching context in this window does not change another window" {
+  export WINDOW2="$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/config staging"
+    kubb ctx
+    signal window2-ready
+    await window1-switched
+SH
+)"
+  run kubb_session "$(cat <<'SH'
+    new_window "${WINDOW2}"
+    await window2-ready
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+    kubb ctx
+    signal window1-switched
+SH
+)"
+  [ "$status" -eq 0 ]
+  [ "$(state CURRENT_CONTEXT)" = "prod" ]
+  [ "$(state KUBERNETES_CONTEXT window2)" = "staging" ]
+  [ "$(state CURRENT_CONTEXT window2)" = "staging" ]
+  [ "$(state KUBERNETES_NAMESPACE window2)" = "team-a" ]
+}
+
+@test "switching namespace in another window on the same context does not change this window" {
+  export WINDOW2="$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+    kubb ctx
+    export KUBB_TEST_FZF_OUTPUT=app-2
+    kubb ns app-2
+    signal window2-switched
+    await window1-switched
+SH
+)"
+  run kubb_session "$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+    kubb ctx
+    new_window "${WINDOW2}"
+    await window2-switched
+    record_state window1
+    export KUBB_TEST_FZF_OUTPUT=kube-system
+    kubb ns kube-system
+    signal window1-switched
+SH
+)"
+  [ "$status" -eq 0 ]
+  # window 1 kept its namespace while window 2 switched
+  [ "$(state KUBERNETES_NAMESPACE window1)" = "app-1" ]
+  [ "$(state KUBECONFIG_NAMESPACE window1)" = "app-1" ]
+  # window 2 kept its namespace while window 1 switched
+  [ "$(state KUBERNETES_NAMESPACE window2)" = "app-2" ]
+  [ "$(state KUBECONFIG_NAMESPACE window2)" = "app-2" ]
+  [ "$(state KUBECONFIG_NAMESPACE)" = "kube-system" ]
+  # the shared source kubeconfig is untouched
+  [ "$(cat "${HOME}/.kube/configs/prod.yaml")" = "$(cat "${KUBB_ROOT}/tests/fixtures/kube/configs/prod.yaml")" ]
+}
+
+@test "closing another window does not remove this window's kubeconfig" {
+  export WINDOW2="$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+    kubb ctx
+SH
+)"
+  run kubb_session "$(cat <<'SH'
+    export KUBB_TEST_FZF_OUTPUT="${HOME}/.kube/configs/prod.yaml prod"
+    kubb ctx
+    new_window "${WINDOW2}"
+    wait
+    [ -f "${KUBECONFIG}" ] && echo "kubeconfig intact"
+SH
+)"
+  [[ "$output" == *"kubeconfig intact"* ]]
+  [ "$(state CURRENT_CONTEXT)" = "prod" ]
+}
