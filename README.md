@@ -47,6 +47,11 @@ kubb namespace      # long form
 
 Requires an active context. Opens an fzf picker for namespaces in the current context.
 
+If you lack permission to list namespaces in the cluster (common with namespace-scoped RBAC), kubb falls back to:
+
+- `kubb ns <name>`: switches straight to `<name>`.
+- `kubb ns`: offers the current namespace plus any namespaces referenced in your kubeconfig contexts, and accepts a free-typed name (type it and press enter).
+
 ### Prompt
 
 Once a context is selected, kubb prepends a colored prompt segment showing the active context (red) and namespace (green):
