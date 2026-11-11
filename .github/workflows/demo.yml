@@ -12,10 +12,10 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install kwokctl
-        uses: kubernetes-sigs/kwok@main
+        uses: kubernetes-sigs/kwok@v0.8.0
         with:
           command: kwokctl
 
