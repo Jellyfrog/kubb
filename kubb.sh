@@ -16,7 +16,16 @@ _kubb_get_contexts() {
 }
 
 _kubb_get_namespaces() {
-  kubectl get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{"\n"}{end}'
+  kubectl get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{"\n"}{end}' 2>/dev/null
+}
+
+# Namespaces known without cluster-wide list permission: the current one and
+# any namespace referenced by a context in the active kubeconfig.
+_kubb_get_known_namespaces() {
+  {
+    echo "${KUBERNETES_NAMESPACE:-default}"
+    kubectl config view -o=jsonpath='{range .contexts[*]}{.context.namespace}{"\n"}{end}' 2>/dev/null
+  } | awk 'NF && !seen[$0]++'
 }
 
 _kubb_get_namespace() {
@@ -104,11 +113,27 @@ _kubb_choose_namespace() {
     return
   fi
 
-  NAMESPACE=$(_kubb_get_namespaces | \
-    fzf --query="${1}" \
-        --select-1 \
-        --preview="kubectl -n {1} get ${KUBB_NAMESPACE_RESOURCES}" \
-  )
+  local NAMESPACES
+  NAMESPACES="$(_kubb_get_namespaces)"
+
+  if [[ -n "${NAMESPACES}" ]]; then
+    NAMESPACE=$(echo "${NAMESPACES}" | \
+      fzf --query="${1}" \
+          --select-1 \
+          --preview="kubectl -n {1} get ${KUBB_NAMESPACE_RESOURCES}" \
+    )
+  elif [[ -n "${1}" ]]; then
+    # Not allowed to list namespaces: trust the name given on the command line
+    NAMESPACE="${1}"
+  else
+    # Not allowed to list namespaces: offer known ones and accept free-form input
+    NAMESPACE=$(_kubb_get_known_namespaces | \
+      fzf --print-query \
+          --header="Cannot list namespaces; pick one or type a name and press enter" \
+          --preview="kubectl -n {1} get ${KUBB_NAMESPACE_RESOURCES}" \
+      | tail -n 1 \
+    )
+  fi
 
   if [[ -z "${NAMESPACE}" ]]; then
     return
